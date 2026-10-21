@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>핏테이블 | 식단 기록</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7f5;color:#24352c;font-family:Arial,sans-serif}
+header{background:#245c45;color:white;padding:25px max(20px,calc((100% - 900px)/2))}
+header h1{margin:0 0 8px}
+main{max-width:900px;margin:24px auto;padding:0 16px}
+.card{background:white;padding:22px;border-radius:16px;margin-bottom:18px;box-shadow:0 3px 14px #163d1710}
+h2{font-size:19px;margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:14px;margin-bottom:6px}
+input,select{width:100%;padding:12px;border:1px solid #ccd8d0;border-radius:9px;background:white;font-size:15px}
+button{background:#26724e;color:white;border:0;padding:12px 16px;border-radius:9px;cursor:pointer;font-size:15px}
+button.secondary{background:#e6f0e9;color:#245c45}
+button.delete{background:#fff0ef;color:#a52f2f;padding:7px 10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{background:#eef5ef;padding:14px;border-radius:12px}
+.stat strong{display:block;font-size:21px;margin-top:8px}
+.small{font-size:12px;color:#68776d}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 5px;border-bottom:1px solid #e8eee9;font-size:14px}
+.notice{background:#fff8e8;padding:12px;border-radius:10px;font-size:13px;line-height:1.6}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🥗 핏테이블</h1>
+  <div>오늘의 식단을 기록하고 균형 잡힌 식사를 계획하세요.</div>
+</header>
+<main>
+  <section class="card">
+    <h2>오늘의 정보</h2>
+    <div class="grid">
+      <div><label for="exercise">오늘의 운동</label>
+        <select id="exercise"><option>근력 운동</option><option>유산소 운동</option><option>걷기</option><option>휴식</option></select>
+      </div>
+      <div><label for="goal">식단 목표</label>
+        <select id="goal"><option>균형 잡힌 식사</option><option>운동 후 회복</option><option>운동 에너지 보충</option></select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🍚 먹은 음식 기록</h2>
+    <div class="grid">
+      <div><label for="food">음식 이름</label>
+        <input id="food" placeholder="예: 밥, 달걀, 두부"/>
+      </div>
+      <div><label for="amount">섭취량 (g)</label>
+        <input id="amount" type="number" min="1" placeholder="예: 150"/>
+      </div>
+      <div><label for="kcal">칼로리 (입력한 양 기준)</label>
+        <input id="kcal" type="number" min="0" placeholder="예: 220"/>
+      </div>
+      <div><label for="protein">단백질 (g)</label>
+        <input id="protein" type="number" min="0" step="0.1" placeholder="예: 7"/>
+      </div>
+      <div><label for="carbs">탄수화물 (g)</label>
+        <input id="carbs" type="number" min="0" step="0.1" placeholder="예: 40"/>
+      </div>
+      <div><label for="fat">지방 (g)</label>
+        <input id="fat" type="number" min="0" step="0.1" placeholder="예: 3"/>
+      </div>
+    </div>
+    <div class="actions">
+      <button onclick="addFood()">+ 음식 기록하기</button>
+      <button class="secondary" onclick="recommend()">식단 추천 받기</button>
+    </div>
+    <p class="small">영양값은 식품 라벨이나 검증된 영양 데이터에서 확인해 입력하세요.</p>
+  </section>
+
+  <section class="card">
+    <h2>📊 오늘의 영양 기록</h2>
+    <div class="stats">
+      <div class="stat">칼로리<strong id="totalKcal">0</strong><span class="small">kcal</span></div>
+      <div class="stat">단백질<strong id="totalProtein">0</strong><span class="small">g</span></div>
+      <div class="stat">탄수화물<strong id="totalCarbs">0</strong><span class="small">g</span></div>
+      <div class="stat">지방<strong id="totalFat">0</strong><span class="small">g</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>📝 음식 기록 목록</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>음식</th><th>양</th><th>kcal</th><th>삭제</th></tr></thead>
+        <tbody id="foodList"><tr><td colspan="4">아직 기록한 음식이 없습니다.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>🤖 5단계 식단 추천</h2>
+    <div id="result" class="notice">
+      음식 기록을 추가한 뒤 추천 버튼을 눌러 보세요.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>💾 기록 관리</h2>
+    <p class="small">이 초기 버전은 현재 브라우저에 기록을 저장합니다. 아직 서버 데이터베이스와 연결되지 않았습니다.</p>
+    <button class="secondary" onclick="exportData()">기록 내보내기 (JSON)</button>
+  </section>
+</main>
+<script>
+const foods = [];
+const $ = id => document.getElementById(id);
+function num(id){return Number($(id).value)}
+function addFood(){
+  const name=$('food').value.trim();
+  const amount=num('amount'), kcal=num('kcal');
+  const protein=num('protein'), carbs=num('carbs'), fat=num('fat');
+  if(!name || amount<=0 || $('kcal').value==='' ||
+     $('protein').value==='' || $('carbs').value==='' ||
+     $('fat').value==='' ||
+     [kcal,protein,carbs,fat].some(v=>!Number.isFinite(v)||v<0)){
+    alert('음식 이름, 양, 영양정보를 올바르게 입력해 주세요.');
+    return;
+  }
+  foods.push({name,amount,kcal,protein,carbs,fat});
+  ['food','amount','kcal','protein','carbs','fat'].forEach(id=>$(id).value='');
+  render();
+}
+function render(){
+  const sum=key=>foods.reduce((s,f)=>s+f[key],0);
+  $('totalKcal').textContent=sum('kcal').toFixed(0);
+  $('totalProtein').textContent=sum('protein').toFixed(1);
+  $('totalCarbs').textContent=sum('carbs').toFixed(1);
+  $('totalFat').textContent=sum('fat').toFixed(1);
+  $('foodList').innerHTML=foods.length?foods.map((f,i)=>
+    `<tr><td>${escapeHtml(f.name)}</td><td>${f.amount}g</td><td>${f.kcal}</td><td><button class="delete" onclick="removeFood(${i})">삭제</button></td></tr>`
+  ).join(''):'<tr><td colspan="4">아직 기록한 음식이 없습니다.</td></tr>';
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function removeFood(i){foods.splice(i,1);render()}
+function recommend(){
+  if(!foods.length){alert('먼저 먹은 음식을 기록해 주세요.');return}
+  const total=foods.reduce((s,f)=>s+f.kcal,0);
+  const protein=foods.reduce((s,f)=>s+f.protein,0);
+  const goal=$('goal').value;
+  $('result').innerHTML=
+    `<b>① 초안</b><br>집에 있는 밥, 달걀, 두부 등을 활용한 균형 잡힌 메뉴를 후보로 고려하세요.<br><br>`+
+    `<b>② 검토</b><br>운동: ${escapeHtml($('exercise').value)} / 목표: ${escapeHtml(goal)}<br>`+
+    `오늘 기록한 음식 ${foods.length}개를 확인했습니다.<br><br>`+
+    `<b>③ 검증</b><br>입력된 기록 합계: ${total.toFixed(0)} kcal, 단백질 ${protein.toFixed(1)}g. `+
+    `입력한 영양값의 정확성은 별도 확인이 필요합니다.<br><br>`+
+    `<b>④ 결정</b><br>현재 기록만으로 하루 필요량을 단정하지 않습니다. 다양한 식품을 포함한 식사를 선택하세요.<br><br>`+
+    `<b>⑤ 책임</b><br>이 결과는 초기 버전의 참고 안내이며, 검증된 데이터베이스 기반 추천은 아직 연결되지 않았습니다.`;
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify({foods,exercise:$('exercise').value,goal:$('goal').value},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='fit-table-records.json';a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
